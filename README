@@ -1,0 +1,26 @@
+Manifest
+
+Attempt at the definitive manifest implementations. 
+
+                                 -*-
+
+File::Manifest - A more user oriented version of ExtUtils::Manifest.
+Supports multiple checksum algorithms with built-in support for MD5,
+cksum, and sum.
+
+Command line program manifest provides an interface to the library.
+
+                                 -*-
+
+Hopefully, this package will eventually be rolled into a File::*
+bundle.
+
+                                 -*-
+
+Requires File::Recurse (part of File::Tools module).
+
+                                 -*-
+
+Copyright (c) 1997 Joshua Nathaniel Pritikin.  All rights reserved.
+This package is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.

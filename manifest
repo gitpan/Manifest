@@ -1,0 +1,45 @@
+#!/nw/dev/perl/bin/perl -w
+
+use strict;
+use Cwd;
+use File::Manifest;
+use Getopt::Long;
+
+sub usage {
+    print "usage: manifest [--diff|--missing] [<dir> [<dest>]]\n";
+    exit;
+}
+
+my $diff=0;
+my $missing=0;
+GetOptions("diff" => \$diff, "missing" => \$missing) or usage();
+usage() if @ARGV > 2;
+
+my $cwd = getcwd;
+
+my $dir = shift @ARGV || $cwd;
+$dir = "$cwd/$dir" if $dir !~ m'^/';
+
+my $dest = shift @ARGV || $dir;
+$dest = "$cwd/$dest" if $dest !~ m'^/';
+
+my $m = new File::Manifest($dir, $dest);
+my $status=0;
+if ($diff or $missing) {
+    my $d = $m->diff;
+    if ($diff) {
+	for my $c ('+','!','-') {
+	    for my $f (@{$d->{$c}}) { print "$c $f->{nm}\n"; $status=1; }
+	}
+    } else {
+	if (@{$d->{'-'}}) {
+	    for my $f (@{$d->{'-'}}) { print "$f->{nm}\n"; $status=1; }
+	} else {
+	    print "Looks complete.\n";
+	}
+    }
+} else {
+    $m->write;
+}
+
+exit $status;
