@@ -1,45 +1,78 @@
-#!/nw/dev/perl/bin/perl -w
+#!/nw/dev/usr/bin/perl -w
 
 use strict;
 use Cwd;
 use File::Manifest;
-use Getopt::Long;
+use Getopt::Std;
 
 sub usage {
-    print "usage: manifest [--diff|--missing] [<dir> [<dest>]]\n";
+    print 
+'usage: manifest [-c] [<dir>]
+          -c  output to stdout
+
+       manifest (-d|-m|-o) <dir> <newdir>
+          -d  diff report
+          -m  missing report
+          -o  overlap report
+
+       manifest (-?|-h)
+
+  export MANICKSUM=SHA        #preferred checksum algorithm
+';
     exit;
 }
 
-my $diff=0;
-my $missing=0;
-GetOptions("diff" => \$diff, "missing" => \$missing) or usage();
-usage() if @ARGV > 2;
-
 my $cwd = getcwd;
-
-my $dir = shift @ARGV || $cwd;
-$dir = "$cwd/$dir" if $dir !~ m'^/';
-
-my $dest = shift @ARGV || $dir;
-$dest = "$cwd/$dest" if $dest !~ m'^/';
-
-my $m = new File::Manifest($dir, $dest);
 my $status=0;
-if ($diff or $missing) {
-    my $d = $m->diff;
-    if ($diff) {
-	for my $c ('+','!','-') {
-	    for my $f (@{$d->{$c}}) { print "$c $f->{nm}\n"; $status=1; }
-	}
-    } else {
-	if (@{$d->{'-'}}) {
-	    for my $f (@{$d->{'-'}}) { print "$f->{nm}\n"; $status=1; }
-	} else {
-	    print "Looks complete.\n";
-	}
-    }
+
+my %opt;
+for (qw(d m o)) { $opt{$_}=0 }
+getopts('?hcdmo', \%opt) or &usage;
+
+&usage if $opt{'?'} || $opt{h};
+my $diff = $opt{d}+$opt{'m'}+$opt{o};
+
+if (!$diff) {
+  my $dir = shift @ARGV || $cwd;
+  &usage if @ARGV;
+  my $m = new File::Manifest($dir);
+  $m->write($opt{c}? (*STDOUT{IO}) : () );
 } else {
-    $m->write;
+  &usage if $diff != 1 || @ARGV != 2;
+  my ($new,$old);
+
+  my ($a1,$a2) = @ARGV;
+  $old = File::Manifest->load($a1);
+
+  # the MANIFEST is never newer than the real thing
+  if ($a1 eq $a2 and -d $a2 and -f "$a2/MANIFEST") {
+    $new = File::Manifest->new($a2);
+    $new->reread_tree;
+  } else {
+    $new = File::Manifest->load($a2);
+  }
+  
+  my $d = $old->diff($new);
+  
+  if ($opt{d}) {
+    for my $c (qw(+ ! -)) {
+      for my $f (@{$d->{$c}}) { print "$c $f->{file}\n"; $status=1; }
+    }
+  } elsif ($opt{'m'}) {
+    if (@{$d->{'-'}}) {
+      for my $f (@{$d->{'-'}}) { print "$f->{file}\n"; $status=1; }
+    } else {
+      print "Looks complete.\n";
+    }
+  } elsif ($opt{o}) {
+    if (@{$d->{'!'}} + @{$d->{'='}} > 0) {
+      for my $c ('!','=') {
+	for my $f (@{$d->{$c}}) { print "$f->{file}\n"; $status=1; }
+      }
+    } else {
+      print "No overlap.\n";
+    }
+  }
 }
 
 exit $status;

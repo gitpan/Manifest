@@ -1,21 +1,24 @@
 Manifest
 
-Attempt at the definitive manifest implementations. 
+Attempt at the definitive manifest implementation. 
 
                                  -*-
 
-File::Manifest - A more user oriented version of ExtUtils::Manifest.
-Supports multiple checksum algorithms with built-in support for MD5,
-cksum, and sum.
+A more user-oriented version of ExtUtils::Manifest.  In addition to
+creating a file listing, also records checksums for each file.  Three
+reports are built-in to the command line interface:
 
-Command line program manifest provides an interface to the library.
+MISSING - Lists files that were in the old manifest but are missing
+          from the new manifest.
+
+DIFF    - Splits output into a listing of files that were add, removed,
+          and modified.  Output is similar to a context diff.
+
+OVERLAP - Reports which files are in both trees.
 
                                  -*-
 
-Hopefully, this package will eventually be rolled into a File::*
-bundle.
-
-                                 -*-
+Get it from http://www.perl.com/CPAN/authors/id/JPRIT/!
 
 Requires File::Recurse (part of File::Tools module).
 
